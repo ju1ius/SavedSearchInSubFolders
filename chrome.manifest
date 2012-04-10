@@ -3,4 +3,7 @@ skin      SavedSearchInSubFolders   classic/1.0   chrome/skin/
 locale    SavedSearchInSubFolders   en-US         chrome/locale/en-US/
 locale    SavedSearchInSubFolders   fr-FR         chrome/locale/fr-FR/
 
+resource  SavedSearchInSubFolders   modules/
+
 overlay chrome://messenger/content/messenger.xul chrome://SavedSearchInSubFolders/content/overlay.xul
+overlay chrome://messenger/content/virtualFolderProperties.xul chrome://SavedSearchInSubFolders/content/virtualfolder-overlay.xul
