@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE overlay SYSTEM "chrome://SavedSearchInSubFolders/locale/overlay.dtd">
+
+<overlay id="SavedSearchInSubFolders-browser-overlay"
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+  <script type="application/x-javascript"
+    src="chrome://SavedSearchInSubFolders/content/overlay.js" />
+
+  <stringbundleset id="stringbundleset">
+    <stringbundle id="SavedSearchInSubFolders-string-bundle"
+      src="chrome://SavedSearchInSubFolders/locale/overlay.properties" />
+  </stringbundleset>
+
+  <menupopup id="taskPopup">
+    <menuitem id="SavedSearchInSubFolders-action-menu-item"
+      label="&SavedSearchInSubFolders.action.label;"
+      accesskey="&SavedSearchInSubFolders.actionItem.accesskey;"
+      insertafter="javascriptConsole,devToolsSeparator"/>
+  </menupopup>
+</overlay>

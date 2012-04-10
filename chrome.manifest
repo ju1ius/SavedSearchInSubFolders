@@ -1,0 +1,5 @@
+content   SavedSearchInSubFolders                 chrome/content/
+locale    SavedSearchInSubFolders   en-US         chrome/locale/en-US/
+locale    SavedSearchInSubFolders   fr-FR         chrome/locale/fr-FR/
+
+overlay chrome://messenger/content/messenger.xul chrome://SavedSearchInSubFolders/content/overlay.xul

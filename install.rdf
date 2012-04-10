@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:em="http://www.mozilla.org/2004/em-rdf#">
+  <Description about="urn:mozilla:install-manifest">
+    <em:id>savedsearchinsubfolders@ju1ius</em:id>
+    <em:type>2</em:type>
+    <em:name>SavedSearchInSubFolders</em:name>
+    <em:version>0.1</em:version>
+    <em:creator>ju1ius</em:creator>
+    <em:contributor>m@micz.it</em:contributor>
+    <em:localized>
+      <Description>
+        <em:locale>fr-FR</em:locale>
+        <em:name>SavedSearchInSubFolders</em:name>
+        <em:description>Etends la recherche des dossiers virtuels à tous les sous-dossiers des dossiers de recherche sélectionnés.</em:description>
+      </Description>
+    </em:localized>
+    <em:description>Extends all the saved searches to subfolders of selected folders.</em:description>
+    <em:targetApplication>
+      <Description>
+        <em:id>{3550f703-e582-4d05-9a08-453d09bdfdc6}</em:id> <!-- Thunderbird -->
+        <em:minVersion>3.1</em:minVersion>
+        <em:maxVersion>10.*</em:maxVersion>
+      </Description>
+    </em:targetApplication>
+  </Description>
+</RDF>
