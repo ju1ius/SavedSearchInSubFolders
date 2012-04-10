@@ -15,55 +15,8 @@ const PrefService = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPr
 const PromptService = Cc["@mozilla.org/embedcomp/prompt-service;1"].getService(Ci.nsIPromptService);
 const MailSession = Cc["@mozilla.org/messenger/services/session;1"].getService(Ci.nsIMsgMailSession);
 const NotificationService =  Cc["@mozilla.org/messenger/msgnotificationservice;1"].getService(Ci.nsIMsgFolderNotificationService);
-//const RdfService = Cc['@mozilla.org/rdf/rdf-service;1'].getService(Ci.nsIRDFService);
 
 var ju1ius = {};
-
-/*
-ju1ius.FolderListener = function(){};
-ju1ius.FolderListener.prototype = {
-  OnItemAdded: function(parent, item, viewString) {
-    Application.console.log(parent);
-    Application.console.log(item);
-    Application.console.log(viewString);
-  },
-  OnItemRemoved: function(parent, item, viewString) {
-    Application.console.log(parent);
-    Application.console.log(item);
-    Application.console.log(viewString);
-  },
-  OnItemPropertyChanged: function(parent, item, viewString) {},
-  OnItemIntPropertyChanged: function(item, property, oldValue, newValue) {},
-  OnItemBoolPropertyChanged: function(item, property, oldValue, newValue) {},
-  OnItemUnicharPropertyChanged: function(item, property, oldValue, newValue) {},
-  OnItemPropertyFlagChanged: function(item, property, oldFlag, newFlag) {},
-  OnItemEvent: function(item, event) {
-    Application.console.log(event);
-    Application.console.log(item);
-  },
-  OnFolderLoaded: function(aFolder) {},
-  OnDeleteOrMoveMessagesCompleted: function(aFolder) {}
-};
-
-ju1ius.MsgFolderListener = function(){};
-ju1ius.MsgFolderListener.prototype = {
-  folderAdded: function(aFolder) {
-    Application.console.log(aFolder);
-  },
-  folderDeleted: function(aFolder) {
-    Application.console.log(aFolder);
-  },
-  folderMoveCopyCompleted: function(aMove, aSrcFolder, aDestFolder) {
-    Application.console.log(aMove, aSrcFolder, aDestFolder);
-  },
-  folderRenamed: function(aOrigFolder, aNewFolder) {
-    Application.console.log(aOrigFolder, aNewFolder);
-  },
-  itemEvent: function(aItem, aEvent, aData) {
-    Application.console.log(aItem, aEvent, aData);
-  }
-}
-*/
 
 ju1ius.SavedSearchInSubFolders = function()
 {
@@ -74,14 +27,6 @@ ju1ius.SavedSearchInSubFolders = function()
   this.menu_item.addEventListener('command', this.onMenuItemCommand.bind(this));
 
   MailSession.AddFolderListener(this, Ci.nsIFolderListener.added);
-  //NotificationService.addListener(
-    //this,
-    //NotificationService.folderAdded |
-    //NotificationService.folderDeleted |
-    //NotificationService.folderMoveCopyCompleted |
-    //NotificationService.folderRenamed |
-    //NotificationService.itemEvent
-  //);
 }
 
 ju1ius.SavedSearchInSubFolders.prototype = {
@@ -100,22 +45,6 @@ ju1ius.SavedSearchInSubFolders.prototype = {
   },
   //
   // ---------- /END nsIFolderListener implementation
-  
-  // ---------- nsIMsgFolderListener implementation
-  /*
-  folderAdded: function(aFolder) {
-    if (aFolder.isSpecialFolder(nsMsgFolderFlags.Trash, false)) {
-      return;
-    }
-    this.updateVirtualFolders();
-    Application.console.log("Added: " + aFolder.URI);
-    this.last_event = {
-      type: 'added',
-      uri: aFolder.folderURL
-    };
-  },
-  */
-  // ---------- /END nsIMsgFolderListener implementation
 
   onMenuItemCommand: function(e)
   {
@@ -155,11 +84,11 @@ ju1ius.SavedSearchInSubFolders.prototype = {
           }
         }
       }
-      //virtual_folder.searchFolders = search_uris.join('|');
-      Application.console.log(search_uris);
+      virtual_folder.searchFolders = search_uris.join('|');
+      //Application.console.log(search_uris);
       virtual_folder.cleanUpMessageDatabase();
     }
-    //AccountManager.saveVirtualFolders();
+    AccountManager.saveVirtualFolders();
     this.addActivityEvent(this.string_bundle.getString("activityMessage"), start_time);
   },
 
