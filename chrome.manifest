@@ -1,4 +1,5 @@
 content   SavedSearchInSubFolders                 chrome/content/
+skin      SavedSearchInSubFolders   classic/1.0   chrome/skin/
 locale    SavedSearchInSubFolders   en-US         chrome/locale/en-US/
 locale    SavedSearchInSubFolders   fr-FR         chrome/locale/fr-FR/
 

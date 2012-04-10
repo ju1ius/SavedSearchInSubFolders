@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
 
+<?xml-stylesheet href="chrome://SavedSearchInSubFolders/skin/overlay.css" type="text/css"?>
+
 <!DOCTYPE overlay SYSTEM "chrome://SavedSearchInSubFolders/locale/overlay.dtd">
 
 <overlay id="SavedSearchInSubFolders-browser-overlay"
