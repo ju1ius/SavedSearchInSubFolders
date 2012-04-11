@@ -7,95 +7,88 @@ const Cu = Components.utils;
 
 Cu.import("resource:///modules/iteratorUtils.jsm");
 Cu.import("resource:///modules/virtualFolderWrapper.js");
+Cu.import("resource:///modules/StringBundle.js");
 Cu.import("resource://gre/modules/Services.jsm");
 
 const app = Cc["@mozilla.org/steel/application;1"].getService(Ci.steelIApplication);
-const console = app.console;
 const AccountManager = Cc["@mozilla.org/messenger/account-manager;1"].getService(Ci.nsIMsgAccountManager);
 const ActivityManager = Cc["@mozilla.org/activity-manager;1"].getService(Ci.nsIActivityManager);
-//const PrefService = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefService);
-//const PromptService = Cc["@mozilla.org/embedcomp/prompt-service;1"].getService(Ci.nsIPromptService);
 const MailSession = Cc["@mozilla.org/messenger/services/session;1"].getService(Ci.nsIMsgMailSession);
 const NotificationService =  Cc["@mozilla.org/messenger/msgnotificationservice;1"].getService(Ci.nsIMsgFolderNotificationService);
-const nsMsgFolderFlags = Ci.nsMsgFolderFlags
+const nsMsgFolderFlags = Ci.nsMsgFolderFlags;
 
 
-var SavedSearchInSubFolders = function(document)
+var SavedSearchInSubFolders = function()
 {
-  this.string_bundle = document.getElementById("SavedSearchInSubFolders-string-bundle");
-  this.preferences = Services.prefs.getBranch("extensions.SavedSearchInSubFolders.");
+  this.preferences = Services.prefs.getBranch("extensions.SavedSearchInSubFolders");
+  this.strbundle = new StringBundle('chrome://SavedSearchInSubFolders/locale/messages.properties');
 
-  this.menu_item = document.getElementById('SavedSearchInSubFolders-action-menu-item');
-  this.menu_item.addEventListener('command', this.onMenuItemCommand.bind(this));
-
-  MailSession.AddFolderListener(this, Ci.nsIFolderListener.added);
+  if(this.preferences.getBoolPref('watch_folders')) {
+    MailSession.AddFolderListener(this, Ci.nsIFolderListener.added);
+  }
 }
 
 SavedSearchInSubFolders.prototype = {
 
-  // ---------- nsIFolderListener implementation
-  //
-  OnItemAdded: function(aParentFolder, aFolder)
+  /**
+   * Watch for newly created folders. Implements nsIFolderListener.
+   *
+   * @param nsIMsgFolder parent_folder
+   * @param nsIMsgFolder folder
+   **/
+  OnItemAdded: function(parent_folder, folder)
   {
     // If no parent, this is an account
-    if(!aParentFolder) { return; }
-    if(aFolder.isSpecialFolder(nsMsgFolderFlags.Trash, false)) {
+    if(!parent_folder) {
       return;
     }
-    //console.log("Added: " + aParentFolder.URI + " > " + aFolder.URI);
-    this.updateVirtualFolders();
-  },
-  //
-  // ---------- /END nsIFolderListener implementation
-
-  onMenuItemCommand: function(e)
-  {
-    if(!this.prompt()) {
+    if(folder.isSpecialFolder(nsMsgFolderFlags.Trash, false)) {
+      return;
+    } else if(folder.isSpecialFolder(nsMsgFolderFlags.Virtual, false)) {
+      this.updateVirtualFolder(folder);
       return;
     }
     this.updateVirtualFolders();
-  },
-
-  prompt: function()
-  {
-    let p_msg = this.string_bundle.getString("promptMessage"),
-        p_msg_q = this.string_bundle.getString("promptMessage_Question"),
-        t_msg = this.string_bundle.getString("promptTitle"),
-        p_msg_c = p_msg + " " + p_msg_q;
-
-    return Services.prompt.confirm(null, t_msg, p_msg_c);
-  },
-
-  updateVirtualFolders: function()
-  {
-    let start_time = Date.now();
-
-    for each(let virtual_folder in this.getAllVirtualFolders()) {
-      let searchFolders = virtual_folder.searchFolders;
-      var search_uris = [];
-      for each(let folder in fixIterator(searchFolders, Ci.nsIMsgFolder)) {
-        search_uris.push(folder.folderURL);
-        if(!folder.hasSubFolders) continue;
-        if(folder.isSpecialFolder(nsMsgFolderFlags.Inbox, false)) continue;
-        //log(folder.folderURL);
-        var uris = this.getDescendentsUris(folder);
-        for(let i = 0, l = uris.length; i < l; ++i) {
-          let uri = uris[i];
-          if(-1 === search_uris.indexOf(uri)) {
-            search_uris.push(uri);
-          }
-        }
-      }
-      virtual_folder.searchFolders = search_uris.join('|');
-      console.log(search_uris);
-      virtual_folder.cleanUpMessageDatabase();
-    }
-    AccountManager.saveVirtualFolders();
-    this.addActivityEvent(this.string_bundle.getString("activityMessage"), start_time);
   },
 
   /**
-   * Returns all virtual folders as instance of VirtualFolderHelper
+   * Updates search folders of all virtual folders
+   * to include all descendent subfolders
+   **/
+  updateVirtualFolders: function()
+  {
+    let start_time = Date.now();
+    for each(let virtual_folder in this.getAllVirtualFolders()) {
+      let search_uris = this.getSearchUrisWithDescendents(virtual_folder);
+      virtual_folder.searchFolders = search_uris.join('|');
+      virtual_folder.cleanUpMessageDatabase();
+    }
+    AccountManager.saveVirtualFolders();
+    this.addActivityEvent("update.activity.message", start_time);
+  },
+
+  /**
+   * Updates all search folders of a given virtual folder
+   * to include all descendent subfolders
+   *
+   * @param VirtualFolderWrapper | nsIMsgFolder virtual_folder
+   **/
+  updateVirtualFolder: function(virtual_folder)
+  {
+    let start_time = Date.now();
+    if(!virtual_folder instanceof VirtualFolderWrapper) {
+      virtual_folder = VirtualFolderHelper.wrapVirtualFolder(virtual_folder);
+    }
+    let search_uris = this.getSearchUrisWithDescendents(virtual_folder);
+    virtual_folder.searchFolders = search_uris.join('|');
+    virtual_folder.cleanUpMessageDatabase();
+    AccountManager.saveVirtualFolders();
+    this.addActivityEvent("update.activity.message", start_time);
+  },
+
+  /**
+   * Returns an Iterator on all the virtual folders,
+   * as instances of VirtualFolderWrapper
    *
    * Don't forget to call the cleanUpMessageDatabase() method
    * on each instance to avoid memory leaks.
@@ -115,7 +108,8 @@ SavedSearchInSubFolders.prototype = {
   },
 
   /**
-   * Returns an iterator on all incoming servers as nsIMsgIncomingServer.
+   * Returns an iterator on all incoming servers,
+   * as instances of nsIMsgIncomingServer.
    *
    * @return Iterator
    **/
@@ -125,7 +119,8 @@ SavedSearchInSubFolders.prototype = {
   },
 
   /**
-   * Returns an iterator on all virtual folders of the given nsIMsgIncomingServer, as nsIMsgFolder.
+   * Returns an iterator on all the virtual folders of the given nsIMsgIncomingServer,
+   * as instances of nsIMsgFolder.
    *
    * @return Iterator
    **/
@@ -158,7 +153,8 @@ SavedSearchInSubFolders.prototype = {
   },
 
   /**
-   * Returns an iterator on all descendants of the given nsIMsgFolder, as nsIMsgFolder.
+   * Returns an iterator on all the descendants of the given nsIMsgFolder,
+   * as instances of nsIMsgFolder.
    *
    * @return Iterator
    **/
@@ -169,23 +165,83 @@ SavedSearchInSubFolders.prototype = {
     return fixIterator(subFolders, Ci.nsIMsgFolder);
   },
 
+  /**
+   * Returns a list of search folder URIs, including all subfolders,
+   * for a given virtual folder.
+   *
+   * @param VirtualFolderWrapper virtual_folder
+   *
+   * @return Array The list of search URIs
+   **/
+  getSearchUrisWithDescendents: function(virtual_folder)
+  {
+    let searchFolders = virtual_folder.searchFolders;
+    var search_uris = [];
+    for each(let folder in fixIterator(searchFolders, Ci.nsIMsgFolder)) {
+      search_uris.push(folder.folderURL);
+      if(!folder.hasSubFolders) continue;
+      if(folder.isSpecialFolder(nsMsgFolderFlags.Inbox, false)) continue;
+      var uris = this.getDescendentsUris(folder);
+      for(let i = 0, l = uris.length; i < l; ++i) {
+        let uri = uris[i];
+        if(-1 === search_uris.indexOf(uri)) {
+          search_uris.push(uri);
+        }
+      }
+    }
+    return search_uris;
+  },
+
+  /**
+   * Fires an activity event
+   *
+   * @param String|Array  message
+   * @param Date          start_time
+   **/
   addActivityEvent: function(message, start_time)
   {
+    if(message instanceof Array) {
+      message = this.localize(message[0], message.slice(1));
+    } else if (typeof message === "string") {
+      message = this.localize(message);
+    }
     // Add and activity event
     let event = Cc["@mozilla.org/activity-event;1"].createInstance(Ci.nsIActivityEvent);
     // Initiator is omitted  
-    event.init(message, null, "Saved Search Them All!", start_time, Date.now()); // completion time  
+    event.init(message, null, "SavedSearchInSubFolders", start_time, Date.now());
     ActivityManager.addActivity(event);
   },
 
-  getAllVirtualFoldersUris: function()
+  /**
+   * Translates a localized string
+   *
+   * @param String  id
+   * @param Array   args
+   **/
+  localize: function(msg, args)
   {
-    var all_uris = [];
-    for each(let virtual_folder in this.getAllVirtualFolders()) {
-      all_uris.push(virtual_folder.searchFoldersURIs);
-      virtual_folder.cleanUpMessageDatabase();
-    }
-    return all_uris;
+    return this.strbundle.get(msg, args); 
+  },
+
+  /**
+   * Logs a message to the javascript console
+   *
+   * @param String msg
+   **/
+  log: function(msg)
+  {
+    app.console.log(msg);
+  },
+
+  /**
+   * Opens a cofirm dialog
+   *
+   * @param String title
+   * @param String msg
+   **/
+  confirm: function(title, msg)
+  {
+    return Services.prompt.confirm(null, title, msg);
   }
 
 };

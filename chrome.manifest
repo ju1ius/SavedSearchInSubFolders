@@ -5,5 +5,6 @@ locale    SavedSearchInSubFolders   fr-FR         chrome/locale/fr-FR/
 
 resource  SavedSearchInSubFolders   modules/
 
-overlay chrome://messenger/content/messenger.xul chrome://SavedSearchInSubFolders/content/overlay.xul
+overlay chrome://messenger/content/messenger.xul chrome://SavedSearchInSubFolders/content/messenger-overlay.xul
+overlay chrome://messenger/content/messenger.xul chrome://SavedSearchInSubFolders/content/menu-overlay.xul
 overlay chrome://messenger/content/virtualFolderProperties.xul chrome://SavedSearchInSubFolders/content/virtualfolder-overlay.xul

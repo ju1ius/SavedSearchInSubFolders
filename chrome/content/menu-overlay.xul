@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+
+<?xml-stylesheet href="chrome://SavedSearchInSubFolders/skin/menu-overlay.css" type="text/css"?>
+
+<!DOCTYPE overlay SYSTEM "chrome://SavedSearchInSubFolders/locale/menu-overlay.dtd">
+
+<overlay id="SavedSearchInSubFolders-menu-overlay"
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+  <script type="application/x-javascript"
+    src="chrome://SavedSearchInSubFolders/content/menu-overlay.js" />
+
+  <menupopup id="taskPopup">
+    <menuitem id="SavedSearchInSubFolders-menu-item"
+      label="&SavedSearchInSubFolders.action.label;"
+      accesskey="&SavedSearchInSubFolders.action.accesskey;"
+      insertafter="javascriptConsole,devToolsSeparator"/>
+  </menupopup>
+
+</overlay>
