@@ -42,7 +42,7 @@ SavedSearchInSubFolders.prototype = {
     if(!parent_folder) {
       return;
     }
-    folder = folder.QueryInterface(Ci.nsIMsgFolder);
+    folder.QueryInterface(Ci.nsIMsgFolder)
     if(folder.isSpecialFolder(nsMsgFolderFlags.Trash, true)) {
       return;
     } else if(folder.isSpecialFolder(nsMsgFolderFlags.Virtual, false)) {
