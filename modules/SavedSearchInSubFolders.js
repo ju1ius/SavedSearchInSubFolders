@@ -20,7 +20,7 @@ const nsMsgFolderFlags = Ci.nsMsgFolderFlags;
 
 var SavedSearchInSubFolders = function()
 {
-  this.preferences = Services.prefs.getBranch("extensions.SavedSearchInSubFolders");
+  this.preferences = Services.prefs.getBranch("extensions.savedsearchinsubfolders.");
   this.strbundle = new StringBundle('chrome://SavedSearchInSubFolders/locale/messages.properties');
 
   if(this.preferences.getBoolPref('watch_folders')) {

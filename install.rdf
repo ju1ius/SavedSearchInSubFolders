@@ -7,6 +7,7 @@
     <em:version>0.1</em:version>
     <em:creator>ju1ius</em:creator>
     <em:contributor>m@micz.it</em:contributor>
+    <em:optionsURL>chrome://SavedSearchInSubFolders/content/preferences.xul</em:optionsURL>  
     <em:localized>
       <Description>
         <em:locale>fr-FR</em:locale>
