@@ -42,7 +42,8 @@ SavedSearchInSubFolders.prototype = {
     if(!parent_folder) {
       return;
     }
-    if(folder.isSpecialFolder(nsMsgFolderFlags.Trash, false)) {
+    folder = folder.QueryInterface(Ci.nsIMsgFolder);
+    if(folder.isSpecialFolder(nsMsgFolderFlags.Trash, true)) {
       return;
     } else if(folder.isSpecialFolder(nsMsgFolderFlags.Virtual, false)) {
       this.updateVirtualFolder(folder);
@@ -76,7 +77,7 @@ SavedSearchInSubFolders.prototype = {
   updateVirtualFolder: function(virtual_folder)
   {
     let start_time = Date.now();
-    if(!virtual_folder instanceof VirtualFolderWrapper) {
+    if(virtual_folder instanceof Ci.nsIMsgFolder) {
       virtual_folder = VirtualFolderHelper.wrapVirtualFolder(virtual_folder);
     }
     let search_uris = this.getSearchUrisWithDescendents(virtual_folder);
