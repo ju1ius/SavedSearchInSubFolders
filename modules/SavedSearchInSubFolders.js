@@ -34,22 +34,25 @@ SavedSearchInSubFolders.prototype = {
    * Watch for newly created folders. Implements nsIFolderListener.
    *
    * @param nsIMsgFolder parent_folder
-   * @param nsIMsgFolder folder
+   * @param nsISupports  item
    **/
-  OnItemAdded: function(parent_folder, folder)
+  OnItemAdded: function(parent_folder, item)
   {
     // If no parent, this is an account
-    if(!parent_folder) {
+    if(!parent_folder || parent_folder.isSpecialFolder(nsMsgFolderFlags.Trash, false)) {
       return;
     }
-    folder.QueryInterface(Ci.nsIMsgFolder)
-    if(folder.isSpecialFolder(nsMsgFolderFlags.Trash, true)) {
-      return;
-    } else if(folder.isSpecialFolder(nsMsgFolderFlags.Virtual, false)) {
-      this.updateVirtualFolder(folder);
-      return;
+
+    if(item instanceof Ci.nsIMsgFolder) {
+      folder = item.QueryInterface(Ci.nsIMsgFolder);
+      if(folder.isSpecialFolder(nsMsgFolderFlags.Trash, true)) {
+        return;
+      } else if(folder.isSpecialFolder(nsMsgFolderFlags.Virtual, false)) {
+        this.updateVirtualFolder(folder);
+        return;
+      }
+      this.updateVirtualFolders();
     }
-    this.updateVirtualFolders();
   },
 
   /**
@@ -260,6 +263,12 @@ var ju1ius =
         _instance = SavedSearchInSubFolders.apply(newClass, arguments) || newClass; 
       }
       return _instance;
+    },
+
+    reload: function()
+    {
+      _instance = null;
+      ju1ius.SavedSearchInSubFolders.getInstance();
     }
   }
 }
