@@ -4,7 +4,7 @@
     <em:id>savedsearchinsubfolders@ju1ius</em:id>
     <em:type>2</em:type>
     <em:name>SavedSearchInSubFolders</em:name>
-    <em:version>0.3</em:version>
+    <em:version>0.4</em:version>
     <em:creator>ju1ius</em:creator>
     <em:optionsURL>chrome://SavedSearchInSubFolders/content/preferences.xul</em:optionsURL>  
     <em:localized>

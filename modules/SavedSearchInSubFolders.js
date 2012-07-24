@@ -25,6 +25,9 @@ var SavedSearchInSubFolders = function()
 
   if(this.preferences.getBoolPref('watch_folders')) {
     MailSession.AddFolderListener(this, Ci.nsIFolderListener.added);
+    // The following are already handled internally
+    //MailSession.AddFolderListener(this, Ci.nsIFolderListener.removed);
+    //MailSession.AddFolderListener(this, Ci.nsIFolderListener.event);
   }
 }
 
@@ -36,22 +39,33 @@ SavedSearchInSubFolders.prototype = {
    * @param nsIMsgFolder parent_folder
    * @param nsISupports  item
    **/
-  OnItemAdded: function(parent_folder, item)
+  OnItemAdded: function(parent_item, item)
   {
+    // Not a Folder...
+    if(!(item instanceof Ci.nsIMsgFolder)) return;
     // If no parent, this is an account
-    if(!parent_folder || parent_folder.isSpecialFolder(nsMsgFolderFlags.Trash, false)) {
-      return;
-    }
+    if(!parent_item) return;
+    if(this.isTrash(item, true) || this.isVirtual(item)) return;
 
-    if(item instanceof Ci.nsIMsgFolder) {
-      folder = item.QueryInterface(Ci.nsIMsgFolder);
-      if(folder.isSpecialFolder(nsMsgFolderFlags.Trash, true)) {
-        return;
-      } else if(folder.isSpecialFolder(nsMsgFolderFlags.Virtual, false)) {
-        this.updateVirtualFolder(folder);
-        return;
+    this.updateVirtualFolders();
+  },
+
+  OnItemEvent: function(item, event)
+  {
+    if(!(item instanceof Ci.nsIMsgFolder)) return;
+    if(this.isTrash(item, true) || this.isVirtual(item)) return;
+    if (event.toString() == "RenameCompleted") {
+      for each(let vf in this.getVirtualFoldersForSearchUri(item.URI)) {
+        this.updateVirtualFolder(vf);
       }
-      this.updateVirtualFolders();
+    }
+  },
+
+  OnItemRemoved: function (parent_item, item) {
+    if (!(item instanceof Ci.nsIMsgFolder)) return;
+    if(this.isTrash(item, true) || this.isVirtual(item)) return;
+    for each(let vf in this.getVirtualFoldersForSearchUri(item.URI)) {
+      this.updateVirtualFolder(vf);
     }
   },
 
@@ -107,6 +121,25 @@ SavedSearchInSubFolders.prototype = {
         let wrapper = VirtualFolderHelper.wrapVirtualFolder(virtual_folder);
         virtual_folders.push(wrapper);
       }
+    }
+    return fixIterator(virtual_folders);
+  },
+
+  /**
+   * Returns an Iterator on all virtual folders having
+   * their searchFolderURIs property containing the given uri
+   * as instances of VirtualFolderWrapper
+   *
+   * Don't forget to call the cleanUpMessageDatabase() method
+   * on each instance to avoid memory leaks.
+   *
+   * @return Iterator
+   **/
+  getVirtualFoldersForSearchUri: function(uri)
+  {
+    var virtual_folders = [];
+    for each(let vf in this.getAllVirtualFolders()) {
+      if(-1 !== vf.searchFolderURIs.indexOf(uri)) virtual_folders.push(vf);
     }
     return fixIterator(virtual_folders);
   },
@@ -183,17 +216,30 @@ SavedSearchInSubFolders.prototype = {
     var search_uris = [];
     for each(let folder in fixIterator(searchFolders, Ci.nsIMsgFolder)) {
       search_uris.push(folder.folderURL);
-      if(!folder.hasSubFolders) continue;
-      if(folder.isSpecialFolder(nsMsgFolderFlags.Inbox, false)) continue;
+      this.log(folder.folderURL)
+      if(!folder.hasSubFolders || this.isInbox(folder)) continue;
       var uris = this.getDescendentsUris(folder);
       for(let i = 0, l = uris.length; i < l; ++i) {
         let uri = uris[i];
-        if(-1 === search_uris.indexOf(uri)) {
-          search_uris.push(uri);
-        }
+        if(-1 === search_uris.indexOf(uri)) search_uris.push(uri);
       }
     }
     return search_uris;
+  },
+
+  isInbox: function(folder)
+  {
+    return folder.isSpecialFolder(nsMsgFolderFlags.Inbox, false);
+  },
+  isTrash: function(folder, check_parents)
+  {
+    if(null === check_parents) check_parents = false;
+    return folder.isSpecialFolder(nsMsgFolderFlags.Trash, check_parents);
+  },
+  isVirtual: function(folder, check_parents)
+  {
+    if(null === check_parents) check_parents = false;
+    return folder.isSpecialFolder(nsMsgFolderFlags.Virtual, check_parents);
   },
 
   /**

@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+
+<overlay id="SavedSearchInSubFolders-virtualfolderlist-overlay"
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+  <script type="application/x-javascript"
+    src="chrome://SavedSearchInSubFolders/content/virtualfolderlist-overlay.js" />
+
+  <dialog id="searchFolderWindow" />
+
+</overlay>
