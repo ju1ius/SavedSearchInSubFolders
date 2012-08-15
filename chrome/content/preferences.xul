@@ -16,10 +16,16 @@
       <preference id="extensions.savedsearchinsubfolders.watch_folders"
         name="extensions.savedsearchinsubfolders.watch_folders"
         type="bool" />
+      <preference id="extensions.savedsearchinsubfolders.debug"
+        name="extensions.savedsearchinsubfolders.debug"
+        type="bool" />
     </preferences>
 
     <checkbox label="&prefs.watch_folders;"
       preference="extensions.savedsearchinsubfolders.watch_folders"
+      onchange="ju1ius.SavedSearchInSubFolders.reload();" />
+    <checkbox label="&prefs.debug;"
+      preference="extensions.savedsearchinsubfolders.debug"
       onchange="ju1ius.SavedSearchInSubFolders.reload();" />
 
   </prefpane>

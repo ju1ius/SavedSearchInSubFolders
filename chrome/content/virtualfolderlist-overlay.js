@@ -15,8 +15,14 @@ window.addEventListener("load", function(e)
   // Monkey patches chrome://messenger/content/virtualFolderListDialog.js
   addFolderToSearchListString = function (aFolder, aCurrentSearchURIString)
   {
-    var uris = [];
-    if (aCurrentSearchURIString) uris = aCurrentSearchURIString.split('|');
+    j3s.debug("Adding folder to search string:\n" + aFolder.URI);
+
+    var uris = [],
+        searchStr;
+
+    if (aCurrentSearchURIString) {
+      uris = aCurrentSearchURIString.split('|');
+    }
     if(-1 === uris.indexOf(aFolder.URI)) {
       uris.push(aFolder.URI);
     }
@@ -25,7 +31,9 @@ window.addEventListener("load", function(e)
         if(-1 === uris.indexOf(uri)) uris.push(uri);
       }
     }
-    return uris.join('|');
+    searchStr = uris.join('|');
+    j3s.debug("Current search string is now:\n" + searchStr);
+    return searchStr;
   }
 
 }, false);

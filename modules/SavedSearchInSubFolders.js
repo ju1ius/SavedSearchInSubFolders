@@ -1,5 +1,12 @@
 var EXPORTED_SYMBOLS = ['ju1ius'];
 
+/**
+ * Set up our global namespace
+ **/
+if (!ju1ius || typeof ju1ius !== 'object') {
+  var ju1ius = {};
+}
+
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cr = Components.results;
@@ -184,7 +191,7 @@ SavedSearchInSubFolders.prototype = {
   {
     let uris = [];
     for each(let current_folder in this.getDescendents(aFolder)) {
-      uris.push(current_folder.folderURL);
+      uris.push(current_folder.URI);
     }
     return uris;
   },
@@ -215,8 +222,8 @@ SavedSearchInSubFolders.prototype = {
     let searchFolders = virtual_folder.searchFolders;
     var search_uris = [];
     for each(let folder in fixIterator(searchFolders, Ci.nsIMsgFolder)) {
-      search_uris.push(folder.folderURL);
-      this.log(folder.folderURL)
+      search_uris.push(folder.URI);
+      this.log(folder.URI)
       if(!folder.hasSubFolders || this.isInbox(folder)) continue;
       var uris = this.getDescendentsUris(folder);
       for(let i = 0, l = uris.length; i < l; ++i) {
@@ -284,6 +291,19 @@ SavedSearchInSubFolders.prototype = {
   },
 
   /**
+   * Outputs a debugging message to the javascript console,
+   * only if the debug pref is true.
+   *
+   * @param String msg
+   **/
+  debug: function(msg)
+  {
+    if (this.preferences.getBoolPref('debug')) {
+      this.log("[SavedSearchInSubFolders] " + msg);
+    }
+  },
+
+  /**
    * Opens a cofirm dialog
    *
    * @param String title
@@ -296,26 +316,26 @@ SavedSearchInSubFolders.prototype = {
 
 };
 
-var _instance = null;
 
-var ju1ius =
+/**
+ * Export our module class as a Singleton
+ **/
+var __instance__ = null;
+
+ju1ius.SavedSearchInSubFolders = 
 {
-  SavedSearchInSubFolders:
+  getInstance: function()
   {
-    getInstance: function()
-    {
-      if(null === _instance) {
-        var newClass = Object.create(SavedSearchInSubFolders.prototype);
-        _instance = SavedSearchInSubFolders.apply(newClass, arguments) || newClass; 
-      }
-      return _instance;
-    },
-
-    reload: function()
-    {
-      _instance = null;
-      ju1ius.SavedSearchInSubFolders.getInstance();
+    if(null === __instance__) {
+      var newClass = Object.create(SavedSearchInSubFolders.prototype);
+      __instance__ = SavedSearchInSubFolders.apply(newClass, arguments) || newClass; 
     }
-  }
-}
+    return __instance__;
+  },
 
+  reload: function()
+  {
+    __instance__ = null;
+    ju1ius.SavedSearchInSubFolders.getInstance();
+  }
+};
