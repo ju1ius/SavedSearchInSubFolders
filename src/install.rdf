@@ -4,7 +4,7 @@
     <em:id>savedsearchinsubfolders@ju1ius</em:id>
     <em:type>2</em:type>
     <em:name>SavedSearchInSubFolders</em:name>
-    <em:version>1.0</em:version>
+    <em:version>1.1</em:version>
     <em:creator>ju1ius</em:creator>
     <em:optionsURL>chrome://SavedSearchInSubFolders/content/preferences.xul</em:optionsURL>  
     <em:localized>
@@ -19,7 +19,7 @@
       <Description>
         <em:id>{3550f703-e582-4d05-9a08-453d09bdfdc6}</em:id> <!-- Thunderbird -->
         <em:minVersion>8.0</em:minVersion>
-        <em:maxVersion>13.*</em:maxVersion>
+        <em:maxVersion>16.*</em:maxVersion>
       </Description>
     </em:targetApplication>
   </Description>

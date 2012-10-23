@@ -5,12 +5,14 @@
 
 <prefwindow id="SavedSearchInSubFolders-preferences"
   xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-  title="SavedSearchInSubFolders Preferences">
+  title="SavedSearchInSubFolders Preferences"
+  onload="this.sizeToContent();">
 
-  <script>
-    Components.utils.import("resource://SavedSearchInSubFolders/SavedSearchInSubFolders.js");
-  </script>
-  <prefpane>
+  <prefpane id="SavedSearchInSubFolders-prefpane">
+
+    <script>
+      Components.utils.import("resource://SavedSearchInSubFolders/SavedSearchInSubFolders.js");
+    </script>
 
     <preferences>
       <preference id="extensions.savedsearchinsubfolders.watch_folders"
