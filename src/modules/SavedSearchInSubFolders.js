@@ -222,13 +222,18 @@ SavedSearchInSubFolders.prototype = {
     let searchFolders = virtual_folder.searchFolders;
     var search_uris = [];
     for each(let folder in fixIterator(searchFolders, Ci.nsIMsgFolder)) {
-      search_uris.push(folder.URI);
-      this.log(folder.URI)
+      if(-1 === search_uris.indexOf(folder.URI)) {
+        search_uris.push(folder.URI);
+        this.log("added " + folder.URI);
+      }
       if(!folder.hasSubFolders || this.isInbox(folder)) continue;
       var uris = this.getDescendentsUris(folder);
       for(let i = 0, l = uris.length; i < l; ++i) {
         let uri = uris[i];
-        if(-1 === search_uris.indexOf(uri)) search_uris.push(uri);
+        if(-1 === search_uris.indexOf(uri)) {
+          search_uris.push(uri);
+          this.log("added " + uri);
+        }
       }
     }
     return search_uris;
