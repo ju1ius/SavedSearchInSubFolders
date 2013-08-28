@@ -1,16 +1,13 @@
 (function(){
 
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cr = Components.results;
-const Cu = Components.utils;
+const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
 
 Cu.import("resource://SavedSearchInSubFolders/SavedSearchInSubFolders.js");
 
 window.addEventListener("load", function(e)
 {
-  var j3s = ju1ius.SavedSearchInSubFolders.getInstance();
+    var j3s = ju1ius.SavedSearchInSubFolders.getInstance();
 }, false);
 
 
