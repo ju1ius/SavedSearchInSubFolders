@@ -10,7 +10,6 @@
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
 
-Cu.import("resource:///modules/virtualFolderWrapper.js");
 Cu.import("resource://SavedSearchInSubFolders/SavedSearchInSubFolders.js");
 
 window.addEventListener("load", function(e)

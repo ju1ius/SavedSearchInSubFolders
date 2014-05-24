@@ -12,9 +12,9 @@ Cu.import("resource://SavedSearchInSubFolders/aop.js");
 ju1ius.aop = AOP;
 
 
-Cu.import("resource:///modules/iteratorUtils.jsm");
-Cu.import("resource:///modules/virtualFolderWrapper.js");
-Cu.import("resource:///modules/StringBundle.js");
+Cu.import("resource://app/modules/iteratorUtils.jsm");
+Cu.import("resource://app/modules/virtualFolderWrapper.js");
+Cu.import("resource://gre/modules/StringBundle.js");
 Cu.import("resource://gre/modules/Services.jsm");
 
 const app = Cc["@mozilla.org/steel/application;1"].getService(Ci.steelIApplication),
