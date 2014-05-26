@@ -1,2 +1,3 @@
 <!ENTITY prefs.watch_folders "Watch folders to automatically update search targets">
+<!ENTITY prefs.leaves_only "Add leaf folders only (those that actually contain messages).">
 <!ENTITY prefs.debug "Show debugging messages to console">

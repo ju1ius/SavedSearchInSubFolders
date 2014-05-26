@@ -2,27 +2,21 @@ var EXPORTED_SYMBOLS = ['ju1ius'];
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
 
+Cu.import("resource://app/modules/iteratorUtils.jsm");
+Cu.import("resource://app/modules/virtualFolderWrapper.js");
+Cu.import("resource://gre/modules/StringBundle.js");
+Cu.import("resource://gre/modules/Services.jsm");
+
+Cu.import("resource://SavedSearchInSubFolders/moz.js");
+
 /**
  * Set up our global namespace
  **/
 if (!ju1ius || typeof ju1ius !== 'object') {
     var ju1ius = {};
 }
-Cu.import("resource://SavedSearchInSubFolders/aop.js");
-ju1ius.aop = AOP;
 
-
-Cu.import("resource://app/modules/iteratorUtils.jsm");
-Cu.import("resource://app/modules/virtualFolderWrapper.js");
-Cu.import("resource://gre/modules/StringBundle.js");
-Cu.import("resource://gre/modules/Services.jsm");
-
-const app = Cc["@mozilla.org/steel/application;1"].getService(Ci.steelIApplication),
-    AccountManager = Cc["@mozilla.org/messenger/account-manager;1"].getService(Ci.nsIMsgAccountManager),
-    ActivityManager = Cc["@mozilla.org/activity-manager;1"].getService(Ci.nsIActivityManager),
-    MailSession = Cc["@mozilla.org/messenger/services/session;1"].getService(Ci.nsIMsgMailSession),
-    NotificationService =  Cc["@mozilla.org/messenger/msgnotificationservice;1"].getService(Ci.nsIMsgFolderNotificationService),
-    nsMsgFolderFlags = Ci.nsMsgFolderFlags;
+const FolderFlags = Ci.nsMsgFolderFlags;
 
 
 var SavedSearchInSubFolders = function()
@@ -31,7 +25,7 @@ var SavedSearchInSubFolders = function()
     this.strbundle = new StringBundle('chrome://SavedSearchInSubFolders/locale/messages.properties');
 
     if (this.preferences.getBoolPref('watch_folders')) {
-        MailSession.AddFolderListener(this, Ci.nsIFolderListener.added);
+        moz.mailSession.AddFolderListener(this, Ci.nsIFolderListener.added);
         // The following are already handled internally
         //MailSession.AddFolderListener(this, Ci.nsIFolderListener.removed);
         //MailSession.AddFolderListener(this, Ci.nsIFolderListener.event);
@@ -52,15 +46,20 @@ SavedSearchInSubFolders.prototype = {
         if (!(item instanceof Ci.nsIMsgFolder)) return;
         // If no parent, this is an account
         if (!parent_item) return;
-        if (this.isTrash(item, true) || this.isVirtual(item)) return;
-
+        if (this.isTrash(item) || this.isVirtual(item) || this.isJunk(item)) {
+            return;
+        }
+        // update all virtual folders, since this folder could appear in
+        // several of them
         this.updateVirtualFolders();
     },
 
     OnItemEvent: function(item, event)
     {
         if (!(item instanceof Ci.nsIMsgFolder)) return;
-        if (this.isTrash(item, true) || this.isVirtual(item)) return;
+        if (this.isTrash(item) || this.isVirtual(item) || this.isJunk(item)) {
+            return;
+        }
         if (event.toString() == "RenameCompleted") {
             for each(let vf in this.getVirtualFoldersForSearchUri(item.folderURL)) {
                 this.updateVirtualFolder(vf);
@@ -70,7 +69,9 @@ SavedSearchInSubFolders.prototype = {
 
     OnItemRemoved: function (parent_item, item) {
         if (!(item instanceof Ci.nsIMsgFolder)) return;
-        if (this.isTrash(item, true) || this.isVirtual(item)) return;
+        if (this.isTrash(item) || this.isVirtual(item) || this.isJunk(item)) {
+            return;
+        }
         for each(let vf in this.getVirtualFoldersForSearchUri(item.folderURL)) {
             this.updateVirtualFolder(vf);
         }
@@ -88,7 +89,7 @@ SavedSearchInSubFolders.prototype = {
             virtual_folder.searchFolders = search_uris.join('|');
             virtual_folder.cleanUpMessageDatabase();
         }
-        AccountManager.saveVirtualFolders();
+        moz.accountManager.saveVirtualFolders();
         this.addActivityEvent("update.activity.message", start_time);
     },
 
@@ -107,7 +108,7 @@ SavedSearchInSubFolders.prototype = {
         let search_uris = this.getSearchUrisWithDescendants(virtual_folder);
         virtual_folder.searchFolders = search_uris.join('|');
         virtual_folder.cleanUpMessageDatabase();
-        AccountManager.saveVirtualFolders();
+        moz.accountManager.saveVirtualFolders();
         this.addActivityEvent("update.activity.message", start_time);
     },
 
@@ -159,7 +160,7 @@ SavedSearchInSubFolders.prototype = {
      **/
     getAllServers: function()
     {
-        return fixIterator(AccountManager.allServers, Ci.nsIMsgIncomingServer);
+        return fixIterator(moz.accountManager.allServers, Ci.nsIMsgIncomingServer);
     },
 
     /**
@@ -174,7 +175,7 @@ SavedSearchInSubFolders.prototype = {
         rootFolder  = server.rootFolder;
         if (rootFolder) {
             for each(let folder in this.getDescendants(rootFolder)) {
-                if (folder.flags & nsMsgFolderFlags.Virtual) {
+                if (folder.flags & FolderFlags.Virtual) {
                     virtual_folders.push(folder);
                 }
             }
@@ -219,38 +220,49 @@ SavedSearchInSubFolders.prototype = {
      **/
     getSearchUrisWithDescendants: function(virtual_folder)
     {
+        var search_uris = {};
         let searchFolders = virtual_folder.searchFolders;
-        var search_uris = [],
-            descendant_uris;
         for each(let folder in fixIterator(searchFolders, Ci.nsIMsgFolder)) {
-            if (-1 === search_uris.indexOf(folder.folderURL)) {
-                search_uris.push(folder.folderURL);
-            }
+            search_uris[folder.folderURL] = null;
             if (!folder.hasSubFolders || this.isInbox(folder)) continue;
             for each(let uri in this.getDescendantsUris(folder)) {
-                if (-1 === search_uris.indexOf(uri)) {
-                    search_uris.push(uri);
-                }
+                search_uris[uri] = null
             }
         }
-        return search_uris;
+        return Object.keys(search_uris);
     },
 
     isInbox: function(folder)
     {
-        return folder.isSpecialFolder(nsMsgFolderFlags.Inbox, false);
+        return folder.isSpecialFolder(FolderFlags.Inbox, false);
     },
 
-    isTrash: function(folder, check_parents)
+    isTrash: function(folder)
     {
-        if (null === check_parents) check_parents = false;
-        return folder.isSpecialFolder(nsMsgFolderFlags.Trash, check_parents);
+        return folder.isSpecialFolder(FolderFlags.Trash, true);
     },
 
     isVirtual: function(folder, check_parents)
     {
-        if (null === check_parents) check_parents = false;
-        return folder.isSpecialFolder(nsMsgFolderFlags.Virtual, check_parents);
+        check_parents = !!check_parents;
+        return folder.isSpecialFolder(FolderFlags.Virtual, check_parents);
+    },
+
+    isJunk: function(folder)
+    {
+        return folder.isSpecialFolder(FolderFlags.Junk, true);
+    },
+
+    isLeafFolder: function(folder)
+    {
+        var hasSubFolders = folder.hasSubFolders,
+            hasMessages = folder.getTotalMessages(false),
+            isSpecial = folder.isSpecialFolder(FolderFlags.Virtual
+                                                | FolderFlags.Trash
+                                                | FolderFlags.Inbox
+                                                | FolderFlags.Junk,
+                                                false);
+        return !hasSubFolders && !hasMessages;
     },
 
     /**
@@ -270,7 +282,7 @@ SavedSearchInSubFolders.prototype = {
         let event = Cc["@mozilla.org/activity-event;1"].createInstance(Ci.nsIActivityEvent);
         // Initiator is omitted  
         event.init(message, null, "SavedSearchInSubFolders", start_time, Date.now());
-        ActivityManager.addActivity(event);
+        moz.activityManager.addActivity(event);
     },
 
     /**
@@ -291,7 +303,7 @@ SavedSearchInSubFolders.prototype = {
      **/
     log: function(msg)
     {
-        app.console.log(msg);
+        moz.app.console.log(msg);
     },
 
     /**

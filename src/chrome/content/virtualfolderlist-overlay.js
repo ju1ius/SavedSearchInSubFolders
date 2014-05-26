@@ -4,6 +4,7 @@
 const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
 
 Cu.import("resource://SavedSearchInSubFolders/SavedSearchInSubFolders.js");
+Cu.import("resource://SavedSearchInSubFolders/aop.js");
 
 window.addEventListener("load", function(e)
 {
@@ -11,7 +12,7 @@ window.addEventListener("load", function(e)
         watch_folders = j3s.preferences.getBoolPref('watch_folders');
 
     // Hook on addFolderToSearchListString from chrome://messenger/content/virtualFolderListDialog.js
-    ju1ius.aop.around({
+    AOP.around({
         target: window,
         method: 'addFolderToSearchListString'
     }, function(invocation) {

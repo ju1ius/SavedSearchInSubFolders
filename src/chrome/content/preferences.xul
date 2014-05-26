@@ -18,6 +18,9 @@
       <preference id="extensions.savedsearchinsubfolders.watch_folders"
         name="extensions.savedsearchinsubfolders.watch_folders"
         type="bool" />
+      <preference id="extensions.savedsearchinsubfolders.leaves_only"
+        name="extensions.savedsearchinsubfolders.leaves_only"
+        type="bool" />
       <preference id="extensions.savedsearchinsubfolders.debug"
         name="extensions.savedsearchinsubfolders.debug"
         type="bool" />
@@ -25,6 +28,9 @@
 
     <checkbox label="&prefs.watch_folders;"
       preference="extensions.savedsearchinsubfolders.watch_folders"
+      onchange="ju1ius.SavedSearchInSubFolders.reload();" />
+    <checkbox label="&prefs.leaves_only;"
+      preference="extensions.savedsearchinsubfolders.leaves_only"
       onchange="ju1ius.SavedSearchInSubFolders.reload();" />
     <checkbox label="&prefs.debug;"
       preference="extensions.savedsearchinsubfolders.debug"

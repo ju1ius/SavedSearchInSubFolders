@@ -1,2 +1,3 @@
 <!ENTITY prefs.watch_folders "Observer les dossiers pour mettre à jour automatiquement les cibles de recherche">
+<!ENTITY prefs.leaves_only "Ajouter seulement les dossiers contenant des messages.">
 <!ENTITY prefs.debug "Afficher les messages de débogage sur la console">

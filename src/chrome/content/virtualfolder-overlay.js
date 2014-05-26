@@ -11,6 +11,7 @@
 const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
 
 Cu.import("resource://SavedSearchInSubFolders/SavedSearchInSubFolders.js");
+Cu.import("resource://SavedSearchInSubFolders/aop.js");
 
 window.addEventListener("load", function(e)
 {
@@ -20,7 +21,7 @@ window.addEventListener("load", function(e)
     if (!j3s.preferences.getBoolPref('watch_folders')) { return; }
 
     // Hook on the onOK callback defined in chrome://messenger/content/virtualFolderProperties.js
-    ju1ius.aop.around({
+    AOP.around({
         target: window,
         method: 'onOk'
     }, function(invocation) {

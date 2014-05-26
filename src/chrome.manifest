@@ -9,3 +9,4 @@ overlay chrome://messenger/content/messenger.xul chrome://SavedSearchInSubFolder
 overlay chrome://messenger/content/messenger.xul chrome://SavedSearchInSubFolders/content/menu-overlay.xul
 overlay chrome://messenger/content/virtualFolderProperties.xul chrome://SavedSearchInSubFolders/content/virtualfolder-overlay.xul
 overlay chrome://messenger/content/virtualFolderListDialog.xul chrome://SavedSearchInSubFolders/content/virtualfolderlist-overlay.xul
+overlay chrome://messenger/content/folderProps.xul chrome://SavedSearchInSubFolders/content/folderprops-overlay.xul
