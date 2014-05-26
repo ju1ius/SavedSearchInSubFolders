@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+
+<?xml-stylesheet href="chrome://global/skin/global.css" type="text/css"?>
+<?xml-stylesheet href="chrome://messenger/skin/preferences/preferences.css" type="text/css"?>
+
+<dialog title="Folder Debug Infos"
+    xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+    xmlns:html="http://www.w3.org/1999/xhtml"
+    buttons="accept">
+
+    <script type="application/x-javascript"
+            src="chrome://SavedSearchInSubFolders/content/folder-debug-dialog.js" />
+
+    <vbox id="debug-panel" flex="1">
+
+        <label value="Folder Info:" class="header"/>
+        <grid flex="1" style="overflow: auto">
+            <columns>
+                <column />
+                <column flex="1"/>
+            </columns>
+            <rows id="folder-info"></rows>
+        </grid>
+        
+        <spacer class="spacer"/>
+        <separator class="groove-thin"/>
+
+        <label value="Server Info:" class="header"/>
+        <grid flex="1" style="overflow: auto">
+            <columns>
+                <column />
+                <column flex="1"/>
+            </columns>
+            <rows id="server-info"></rows>
+        </grid>
+
+        <spacer class="spacer"/>
+        <separator class="groove-thin"/>
+
+        <description>
+            Useful links to Mozilla documentation:
+            <html:a href="https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIMsgFolder">nsIMsgFolder</html:a>,
+            <html:a href="http://mxr.mozilla.org/comm-central/source/mailnews/imap/public/nsIMsgImapMailFolder.idl">nsIMsgImapMailFolder</html:a>,
+            <html:a href="https://developer.mozilla.org/en-US/docs/nsMsgFolderFlags.idl">Folder flags</html:a>,
+            <html:a href="https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIMsgIncomingServer">nsIMsgIncomingServer</html:a>,
+            <html:a href="http://mxr.mozilla.org/comm-central/source/mailnews/imap/public/nsIImapIncomingServer.idl">nsIImapIncomingServer</html:a>.
+        </description>
+
+        <button label="Copy info to clipboard" accesskey="C" id="copy-info"/>
+
+    </vbox>
+    <spacer class="spacer"/>
+    <separator class="groove"/>
+</dialog>
+

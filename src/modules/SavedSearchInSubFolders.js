@@ -9,6 +9,8 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 Cu.import("resource://SavedSearchInSubFolders/moz.js");
 
+moz.app.console.log('SavedSearchInSubFolders Extension loaded');
+
 /**
  * Set up our global namespace
  **/
@@ -18,21 +20,13 @@ if (!ju1ius || typeof ju1ius !== 'object') {
 
 const FolderFlags = Ci.nsMsgFolderFlags;
 
+var j3s, SavedSearchInSubFolders, FolderListener,
+    prefs, strbundle;
 
-var SavedSearchInSubFolders = function()
-{
-    this.preferences = Services.prefs.getBranch("extensions.savedsearchinsubfolders.");
-    this.strbundle = new StringBundle('chrome://SavedSearchInSubFolders/locale/messages.properties');
+prefs = Services.prefs.getBranch("extensions.savedsearchinsubfolders.");
+strbundle = new StringBundle('chrome://SavedSearchInSubFolders/locale/messages.properties');
 
-    if (this.preferences.getBoolPref('watch_folders')) {
-        moz.mailSession.AddFolderListener(this, Ci.nsIFolderListener.added);
-        // The following are already handled internally
-        //MailSession.AddFolderListener(this, Ci.nsIFolderListener.removed);
-        //MailSession.AddFolderListener(this, Ci.nsIFolderListener.event);
-    }
-}
-
-SavedSearchInSubFolders.prototype = {
+FolderListener = {
 
     /**
      * Watch for newly created folders. Implements nsIFolderListener.
@@ -43,38 +37,82 @@ SavedSearchInSubFolders.prototype = {
     OnItemAdded: function(parent_item, item)
     {
         // Not a Folder...
-        if (!(item instanceof Ci.nsIMsgFolder)) return;
+        if (!(item instanceof Ci.nsIMsgFolder)) {
+            return;
+        }
         // If no parent, this is an account
-        if (!parent_item) return;
-        if (this.isTrash(item) || this.isVirtual(item) || this.isJunk(item)) {
+        if (!parent_item) {
+            return;
+        }
+        if (j3s.isTrash(item) || j3s.isVirtual(item) || j3s.isJunk(item)) {
             return;
         }
         // update all virtual folders, since this folder could appear in
         // several of them
-        this.updateVirtualFolders();
+        j3s.updateVirtualFolders();
     },
 
     OnItemEvent: function(item, event)
     {
-        if (!(item instanceof Ci.nsIMsgFolder)) return;
-        if (this.isTrash(item) || this.isVirtual(item) || this.isJunk(item)) {
+        if (!(item instanceof Ci.nsIMsgFolder)) {
+            return;
+        }
+        if (j3s.isTrash(item) || j3s.isVirtual(item) || j3s.isJunk(item)) {
             return;
         }
         if (event.toString() == "RenameCompleted") {
-            for each(let vf in this.getVirtualFoldersForSearchUri(item.folderURL)) {
-                this.updateVirtualFolder(vf);
+            for (let vf of j3s.getVirtualFoldersForSearchUri(item.URI)) {
+                j3s.updateVirtualFolder(vf);
             }
         }
     },
 
-    OnItemRemoved: function (parent_item, item) {
-        if (!(item instanceof Ci.nsIMsgFolder)) return;
-        if (this.isTrash(item) || this.isVirtual(item) || this.isJunk(item)) {
+    OnItemRemoved: function (parent_item, item)
+    {
+        if (!(item instanceof Ci.nsIMsgFolder)) {
             return;
         }
-        for each(let vf in this.getVirtualFoldersForSearchUri(item.folderURL)) {
-            this.updateVirtualFolder(vf);
+        if (j3s.isTrash(item) || j3s.isVirtual(item) || j3s.isJunk(item)) {
+            return;
         }
+        for (let vf of j3s.getVirtualFoldersForSearchUri(item.URI)) {
+            j3s.updateVirtualFolder(vf);
+        }
+    }
+};
+
+
+SavedSearchInSubFolders = {
+
+    boot: function()
+    {
+        if (prefs.getBoolPref('watch_folders')) {
+            this.watchFolders();
+        }
+    },
+
+    shutdown: function()
+    {
+        this.unwatchFolders();
+    },
+
+    reboot: function()
+    {
+        this.shutdown();
+        this.boot();
+    },
+
+    watchFolders: function()
+    {
+        moz.mailSession.AddFolderListener(FolderListener, Ci.nsIFolderListener.added);
+        // The following are already handled internally
+        //moz.mailSession.AddFolderListener(FolderListener, Ci.nsIFolderListener.removed);
+        //moz.mailSession.AddFolderListener(FolderListener, Ci.nsIFolderListener.event);
+    },
+
+    unwatchFolders: function()
+    {
+        moz.mailSession.RemoveFolderListener(FolderListener);
     },
 
     /**
@@ -84,10 +122,17 @@ SavedSearchInSubFolders.prototype = {
     updateVirtualFolders: function()
     {
         let start_time = Date.now();
-        for each(let virtual_folder in this.getAllVirtualFolders()) {
-            let search_uris = this.getSearchUrisWithDescendants(virtual_folder);
-            virtual_folder.searchFolders = search_uris.join('|');
-            virtual_folder.cleanUpMessageDatabase();
+        for (let vf of this.getAllVirtualFolders()) {
+            let wrapped = vf.virtualFolder;
+            this.debug('Updating virtual folder: ' + wrapped.name);
+            let searchFolders = [f for(f of this.getSearchFoldersWithDescendants(vf))],
+                search_str = [f.URI for(f of searchFolders)].join('|');
+            vf.searchFolders = searchFolders;
+            //let search_uris = this.getSearchUrisWithDescendants(vf),
+                //search_str = search_uris.join('|');
+            //vf.searchFolders = search_str;
+            vf.cleanUpMessageDatabase();
+            this.debug(wrapped.name + ': ' + search_str);
         }
         moz.accountManager.saveVirtualFolders();
         this.addActivityEvent("update.activity.message", start_time);
@@ -99,57 +144,54 @@ SavedSearchInSubFolders.prototype = {
      *
      * @param VirtualFolderWrapper | nsIMsgFolder virtual_folder
      **/
-    updateVirtualFolder: function(virtual_folder)
+    updateVirtualFolder: function(vf)
     {
         let start_time = Date.now();
-        if (virtual_folder instanceof Ci.nsIMsgFolder) {
-            virtual_folder = VirtualFolderHelper.wrapVirtualFolder(virtual_folder);
+        if (vf instanceof Ci.nsIMsgFolder) {
+            vf = VirtualFolderHelper.wrapVirtualFolder(vf);
         }
-        let search_uris = this.getSearchUrisWithDescendants(virtual_folder);
-        virtual_folder.searchFolders = search_uris.join('|');
-        virtual_folder.cleanUpMessageDatabase();
+        let wrapped = vf.virtualFolder;
+        this.debug('Updating virtual folder: ' + wrapped.name);
+        let search_uris = this.getSearchUrisWithDescendants(vf);
+        vf.searchFolders = search_uris.join('|');
+        vf.cleanUpMessageDatabase();
+        this.debug(wrapped.name + ': ' + search_str);
         moz.accountManager.saveVirtualFolders();
         this.addActivityEvent("update.activity.message", start_time);
     },
 
     /**
-     * Returns an Iterator on all the virtual folders,
-     * as instances of VirtualFolderWrapper
+     * Yields all the virtual folders, as instances of VirtualFolderWrapper
      *
      * Don't forget to call the cleanUpMessageDatabase() method
      * on each instance to avoid memory leaks.
      *
-     * @return Iterator
      **/
     getAllVirtualFolders: function()
     {
-        var virtual_folders = [];
-        for each(let server in this.getAllServers()) {
-            for each(let virtual_folder in this.getVirtualFolders(server)) {
-                let wrapper = VirtualFolderHelper.wrapVirtualFolder(virtual_folder);
-                virtual_folders.push(wrapper);
+        for (let server of this.getAllServers()) {
+            for (let vf of this.getVirtualFolders(server)) {
+                yield VirtualFolderHelper.wrapVirtualFolder(vf);
             }
         }
-        return fixIterator(virtual_folders);
     },
 
     /**
-     * Returns an Iterator on all virtual folders having
-     * their searchFolderURIs property containing the given uri
+     * Yields all virtual folders having
+     * their searchFolderURIs property containing the given uri,
      * as instances of VirtualFolderWrapper
      *
      * Don't forget to call the cleanUpMessageDatabase() method
      * on each instance to avoid memory leaks.
      *
-     * @return Iterator
      **/
     getVirtualFoldersForSearchUri: function(uri)
     {
-        var virtual_folders = [];
-        for each(let vf in this.getAllVirtualFolders()) {
-            if (-1 !== vf.searchFolderURIs.indexOf(uri)) virtual_folders.push(vf);
+        for (let vf of this.getAllVirtualFolders()) {
+            if (-1 !== vf.searchFolderURIs.indexOf(uri)) {
+                yield vf;
+            }
         }
-        return fixIterator(virtual_folders);
     },
 
     /**
@@ -160,41 +202,38 @@ SavedSearchInSubFolders.prototype = {
      **/
     getAllServers: function()
     {
-        return fixIterator(moz.accountManager.allServers, Ci.nsIMsgIncomingServer);
+        let it = fixIterator(moz.accountManager.allServers, Ci.nsIMsgIncomingServer);
+        return (s for(s in it));
     },
 
     /**
-     * Returns an iterator on all the virtual folders of the given nsIMsgIncomingServer,
+     * Yields all virtual folders on the given nsIMsgIncomingServer,
      * as instances of nsIMsgFolder.
      *
-     * @return Iterator
      **/
     getVirtualFolders: function(server)
     {
-        let virtual_folders = [],
-        rootFolder  = server.rootFolder;
-        if (rootFolder) {
-            for each(let folder in this.getDescendants(rootFolder)) {
-                if (folder.flags & FolderFlags.Virtual) {
-                    virtual_folders.push(folder);
-                }
+        let rootFolder  = server.rootFolder;
+        if (!rootFolder) {
+            this.debug('Server at ' + server.serverURI + ' does not have a root folder !');
+            return;
+        }
+        for (let folder of this.getDescendants(rootFolder)) {
+            if (folder.flags & FolderFlags.Virtual) {
+                yield folder;
             }
         }
-        return fixIterator(virtual_folders, Ci.nsIMsgFolder);
     },
 
     /**
-     * Returns the URIs of all descendants of the given nsIMsgFolder
+     * Yields the URIs of all descendants of the given nsIMsgFolder
      *
-     * @return Array
      **/
-    getDescendantsUris: function(aFolder)
+    getDescendantsUris: function(folder)
     {
-        let uris = [];
-        for each(let current_folder in this.getDescendants(aFolder)) {
-            uris.push(current_folder.folderURL);
+        for (let desc of this.getDescendants(folder)) {
+            yield desc.URI;
         }
-        return uris;
     },
 
     /**
@@ -203,33 +242,45 @@ SavedSearchInSubFolders.prototype = {
      *
      * @return Iterator
      **/
-    getDescendants: function(aFolder)
+    getDescendants: function(folder)
     {
         let subFolders = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
-        aFolder.ListDescendants(subFolders);
-        return fixIterator(subFolders, Ci.nsIMsgFolder);
+        folder.ListDescendants(subFolders);
+        return (f for(f in fixIterator(subFolders, Ci.nsIMsgFolder)));
     },
 
     /**
      * Returns a list of search folder URIs, including all subfolders,
      * for a given virtual folder.
      *
-     * @param VirtualFolderWrapper virtual_folder
+     * @param VirtualFolderWrapper vf
      *
      * @return Array The list of search URIs
      **/
-    getSearchUrisWithDescendants: function(virtual_folder)
+    getSearchUrisWithDescendants: function(vf)
     {
-        var search_uris = {};
-        let searchFolders = virtual_folder.searchFolders;
-        for each(let folder in fixIterator(searchFolders, Ci.nsIMsgFolder)) {
-            search_uris[folder.folderURL] = null;
+        var uris = new Set();
+        for (let folder of vf.searchFolders) {
+            uris.add(folder.URI);
             if (!folder.hasSubFolders || this.isInbox(folder)) continue;
-            for each(let uri in this.getDescendantsUris(folder)) {
-                search_uris[uri] = null
+            for (let uri of this.getDescendantsUris(folder)) {
+                uris.add(uri);
             }
         }
-        return Object.keys(search_uris);
+        return (u for(u of uris));
+    },
+
+    getSearchFoldersWithDescendants: function(vf)
+    {
+        var searchFolders = new Set();
+        for (let folder of vf.searchFolders) {
+            searchFolders.add(folder);
+            if (!folder.hasSubFolders || this.isInbox(folder)) continue;
+            for (let desc of this.getDescendants(folder)) {
+                searchFolders.add(folder);
+            }
+        }
+        return (f for(f of searchFolders));
     },
 
     isInbox: function(folder)
@@ -293,7 +344,7 @@ SavedSearchInSubFolders.prototype = {
      **/
     localize: function(msg, args)
     {
-        return this.strbundle.get(msg, args); 
+        return strbundle.get(msg, args); 
     },
 
     /**
@@ -314,7 +365,7 @@ SavedSearchInSubFolders.prototype = {
      **/
     debug: function(msg)
     {
-        if (this.preferences.getBoolPref('debug')) {
+        if (prefs.getBoolPref('debug')) {
             this.log("[SavedSearchInSubFolders] " + msg);
         }
     },
@@ -332,27 +383,18 @@ SavedSearchInSubFolders.prototype = {
 
 };
 
+function delegate(obj, method) {
+    return function () {
+        return obj[method].apply(obj, arguments);
+    } 
+}
 
 /**
- * Export our module class as a Singleton
- **/
-var __instance__ = null;
+ * Prefs methods shortcuts
+ */
+for (let method of ['getIntPref', 'getBoolPref', 'getCharPref']) {
+    SavedSearchInSubFolders[method] = delegate(prefs, method);
+}
 
-ju1ius.SavedSearchInSubFolders = {
 
-    getInstance: function()
-    {
-        if (null === __instance__) {
-            var newClass = Object.create(SavedSearchInSubFolders.prototype);
-            __instance__ = SavedSearchInSubFolders.apply(newClass, arguments) || newClass; 
-        }
-        return __instance__;
-    },
-
-    reload: function()
-    {
-        __instance__ = null;
-        ju1ius.SavedSearchInSubFolders.getInstance();
-    }
-
-};
+ju1ius.SavedSearchInSubFolders = SavedSearchInSubFolders;

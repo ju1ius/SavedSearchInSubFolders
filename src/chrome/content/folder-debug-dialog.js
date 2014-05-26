@@ -1,6 +1,7 @@
 (function() {
 
 const XUL = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+const HTML = "http://www.w3.org/1999/xhtml";
 
 const {
     classes: Cc,
@@ -11,23 +12,21 @@ const {
 
 const FolderFlags = Ci.nsMsgFolderFlags;
 
+Cu.import("resource://app/modules/virtualFolderWrapper.js");
+
 Cu.import("resource://SavedSearchInSubFolders/dom.js");
 Cu.import("resource://SavedSearchInSubFolders/moz.js");
 Cu.import("resource://SavedSearchInSubFolders/SavedSearchInSubFolders.js");
 
-var j3s = ju1ius.SavedSearchInSubFolders.getInstance(),
+var j3s = ju1ius.SavedSearchInSubFolders,
     dom = DOM(document);
 
 window.addEventListener('load', function()
 {
     var folder = window.arguments[0].folder,
-        tab = dom.qs('#SavedSearchInSubFolders-debug-tab'),
-        copy_btn = dom.qs('#SavedSearchInSubFolders-copy-info');
+        copy_btn = dom.qs('copy-info');
     if (!folder) {
-        return;
-    }
-    if (!j3s.preferences.getBoolPref('debug')) {
-        tab.hidden = true;
+        j3s.log('No folder specified');
         return;
     }
 
@@ -41,9 +40,10 @@ window.addEventListener('load', function()
 
 function populateFolderInfo(folder)
 {
-    var listbox = dom.qs('#SavedSearchInSubFolders-folder-info');
+    var listbox = dom.qs('#folder-info');
     add_row(listbox, 'Name', folder.name);
-    add_row(listbox, 'URI', folder.folderURL);
+    add_row(listbox, 'URI', folder.URI);
+    add_row(listbox, 'URL', folder.folderURL);
     add_row(listbox, 'Flags', [k for([k, v] of enumerateFlags(folder))].join(', '));
     add_row(listbox, 'Has subfolders', folder.hasSubFolders);
     add_row(listbox, 'Number of messages', folder.getTotalMessages(false));
@@ -64,6 +64,12 @@ function populateFolderInfo(folder)
         add_row(listbox, '[IMAP] Is namespace?', folder.isNamespace);
         add_row(listbox, '[IMAP] Hierarchy delimiter', folder.hierarchyDelimiter);
     }
+    if (folder.flags & FolderFlags.Virtual) {
+        let vf = VirtualFolderHelper.wrapVirtualFolder(folder),
+            search_uris = vf.searchFolderURIs.split('|');
+        vf.cleanUpMessageDatabase();
+        add_row(listbox, '[VIRTUAL] Search URIs', search_uris);
+    }
 }
 
 function enumerateFlags(folder)
@@ -78,7 +84,7 @@ function enumerateFlags(folder)
 
 function populateServerInfo(folder)
 {
-    var listbox = dom.qs('#SavedSearchInSubFolders-server-info'),
+    var listbox = dom.qs('#server-info'),
         server = folder.server;
     add_row(listbox, 'URI', server.serverURI);
     add_row(listbox, 'Host', server.hostName);
@@ -109,7 +115,7 @@ function populateServerInfo(folder)
 
 function addLinkHandlers()
 {
-    var links = dom.qsa('#SavedSearchInSubFolders-debug-panel a[href]');
+    var links = dom.qsa('a[href]');
     for (let link of links) {
         link.addEventListener('click', function(event) {
             event.preventDefault();
@@ -121,11 +127,11 @@ function addLinkHandlers()
 function copy_info()
 {
     var output = ['# Folder Info', '# ===================='];
-    for (let row of dom.qsa('#SavedSearchInSubFolders-folder-info listitem')) {
+    for (let row of dom.qsa('#folder-info row')) {
         output.push(serialize_row(row));
     }
     output.push('', '# ServerInfo', '# ====================');
-    for (let row of dom.qsa('#SavedSearchInSubFolders-server-info listitem')) {
+    for (let row of dom.qsa('#server-info row')) {
         output.push(serialize_row(row));
     }
     output = output.join('\n');
@@ -135,21 +141,37 @@ function copy_info()
 function add_row(listbox)
 {
     var args = Array.prototype.slice.call(arguments, 1),
-        row = dom.el('listitem');
+        row = dom.el('row');
     for (let arg of args) {
-        let cell = dom.el('listcell');
-        dom.attr(cell, 'label', arg);
-        dom.append(cell, row)
+        if (Array.isArray(arg)) {
+            let p = dom.el('p', HTML);
+            for (let line of arg) {
+                dom.append(line, p);
+                dom.append(dom.el('br', HTML), p);
+            }
+            dom.append(p, row);
+        } else {
+            let cell = dom.el('label');
+            dom.attr(cell, 'value', arg);
+            dom.append(cell, row)
+        }
     }
     dom.append(row, listbox);
 }
 
 function serialize_row(row)
 {
-    var cells = dom.qsa('listcell', row),
+    var cells = dom.qsa('label, p', row),
         output = [];
     for (let cell of cells) {
-        output.push(dom.attr(cell, 'label'));
+        switch (cell.nodeName) {
+            case 'label':
+                output.push(dom.attr(cell, 'value'));
+                break;
+            default:
+                output.push(dom.text(cell));
+                break;
+        }
     }
     return output.join(': ');
 }

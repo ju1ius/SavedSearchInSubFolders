@@ -4,38 +4,33 @@
 <!DOCTYPE overlay SYSTEM "chrome://SavedSearchInSubFolders/locale/preferences.dtd">
 
 <prefwindow id="SavedSearchInSubFolders-preferences"
-  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-  title="SavedSearchInSubFolders Preferences"
-  onload="this.sizeToContent();">
+    xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+    title="SavedSearchInSubFolders Preferences">
 
-  <prefpane id="SavedSearchInSubFolders-prefpane">
+    <script src="chrome://SavedSearchInSubFolders/content/preferences.js" type="application/x-javascript" />
 
-    <script>
-      Components.utils.import("resource://SavedSearchInSubFolders/SavedSearchInSubFolders.js");
-    </script>
+    <prefpane id="SavedSearchInSubFolders-prefpane">
 
-    <preferences>
-      <preference id="extensions.savedsearchinsubfolders.watch_folders"
-        name="extensions.savedsearchinsubfolders.watch_folders"
-        type="bool" />
-      <preference id="extensions.savedsearchinsubfolders.leaves_only"
-        name="extensions.savedsearchinsubfolders.leaves_only"
-        type="bool" />
-      <preference id="extensions.savedsearchinsubfolders.debug"
-        name="extensions.savedsearchinsubfolders.debug"
-        type="bool" />
-    </preferences>
+        <preferences>
+            <preference id="extensions.savedsearchinsubfolders.watch_folders"
+                name="extensions.savedsearchinsubfolders.watch_folders"
+                type="bool" 
+                onchange="onWatchFoldersChange(event);" />
+            <preference id="extensions.savedsearchinsubfolders.leaves_only"
+                name="extensions.savedsearchinsubfolders.leaves_only"
+                type="bool" />
+            <preference id="extensions.savedsearchinsubfolders.debug"
+                name="extensions.savedsearchinsubfolders.debug"
+                type="bool" />
+        </preferences>
 
-    <checkbox label="&prefs.watch_folders;"
-      preference="extensions.savedsearchinsubfolders.watch_folders"
-      onchange="ju1ius.SavedSearchInSubFolders.reload();" />
-    <checkbox label="&prefs.leaves_only;"
-      preference="extensions.savedsearchinsubfolders.leaves_only"
-      onchange="ju1ius.SavedSearchInSubFolders.reload();" />
-    <checkbox label="&prefs.debug;"
-      preference="extensions.savedsearchinsubfolders.debug"
-      onchange="ju1ius.SavedSearchInSubFolders.reload();" />
+        <checkbox label="&prefs.watch_folders;"
+            preference="extensions.savedsearchinsubfolders.watch_folders" />
+        <checkbox label="&prefs.leaves_only;"
+            preference="extensions.savedsearchinsubfolders.leaves_only" />
+        <checkbox label="&prefs.debug;"
+            preference="extensions.savedsearchinsubfolders.debug" />
 
-  </prefpane>
+    </prefpane>
 
 </prefwindow>

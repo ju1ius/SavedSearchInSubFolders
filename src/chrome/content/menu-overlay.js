@@ -8,7 +8,7 @@ Cu.import("resource://SavedSearchInSubFolders/SavedSearchInSubFolders.js");
 
 window.addEventListener("load", function(e)
 {
-    var j3s = ju1ius.SavedSearchInSubFolders.getInstance(),
+    var j3s = ju1ius.SavedSearchInSubFolders,
         menu_item = document.getElementById('SavedSearchInSubFolders-menu-item'),
         prompt_msg = j3s.localize("update.prompt.message") + "\n" + j3s.localize("update.prompt.question"),
         prompt_title = j3s.localize("update.prompt.title");

@@ -5,45 +5,52 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results : Cr} = Components;
 
 Cu.import("resource://SavedSearchInSubFolders/SavedSearchInSubFolders.js");
 Cu.import("resource://SavedSearchInSubFolders/aop.js");
+    
+
+var j3s = ju1ius.SavedSearchInSubFolders,
+    watch_folders;
+
 
 window.addEventListener("load", function(e)
 {
-    var j3s = ju1ius.SavedSearchInSubFolders.getInstance(),
-        watch_folders = j3s.preferences.getBoolPref('watch_folders');
+    watch_folders = j3s.getBoolPref('watch_folders');
 
-    // Hook on addFolderToSearchListString from chrome://messenger/content/virtualFolderListDialog.js
     AOP.around({
         target: window,
         method: 'addFolderToSearchListString'
-    }, function(invocation) {
-        var aFolder = invocation.arguments[0],
-            //aCurrentSearchURIString = invocation.arguments[1],
-            // set this to the result of the invocation,
-            // in case it was modified by another addon
-            aCurrentSearchURIString = invocation.proceed(),
-            uris = [],
-            searchStr = '';
-
-        j3s.debug("Adding folder to search string:\n" + aFolder.folderURL);
-
-        if (aCurrentSearchURIString) {
-            uris = aCurrentSearchURIString.split('|');
-        }
-        if (-1 === uris.indexOf(aFolder.folderURL)) {
-            uris.push(aFolder.folderURL);
-        }
-        if (watch_folders && aFolder.hasSubFolders && !j3s.isInbox(aFolder)) {
-            for each(let uri in j3s.getDescendantsUris(aFolder)) {
-                if (-1 === uris.indexOf(uri)) uris.push(uri);
-            }
-        }
-        searchStr = uris.join('|');
-        j3s.debug("Current search string is now:\n" + searchStr);
-
-        return searchStr;
-    });
+    }, addFolderHook);
 
 }, false);
 
+/**
+ * Hook on addFolderToSearchListString
+ * from chrome://messenger/content/virtualFolderListDialog.js
+ *
+ * Called for each folder checked in the dialog.
+ * The folder is passed as argument, and the function returns the accumulated uris,
+ * as a "|" delimited string list.
+ */
+function addFolderHook(invocation)
+{
+    var folder = invocation.arguments[0],
+        // set this to the result of the invocation,
+        // in case it was modified by another addon
+        currentSearchString = invocation.proceed() || '',
+        uris = new Set(currentSearchString.split('|'));
+
+    uris.add(folder.URI);
+    j3s.debug("Added folder to search string:\n" + folder.folderURL);
+
+    if (watch_folders && folder.hasSubFolders && !j3s.isInbox(folder)) {
+        for (let uri of j3s.getDescendantsUris(folder)) {
+            uris.add(uri);
+        }
+    }
+    currentSearchString = [u for(u of uris)].join('|');
+    j3s.debug("Current search string is now:\n" + currentSearchString);
+
+    return currentSearchString;
+
+}
 
 })();

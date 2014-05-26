@@ -15,10 +15,10 @@ Cu.import("resource://SavedSearchInSubFolders/aop.js");
 
 window.addEventListener("load", function(e)
 {
-    var j3s = ju1ius.SavedSearchInSubFolders.getInstance();
+    var j3s = ju1ius.SavedSearchInSubFolders;
 
-    if (!j3s.preferences.getBoolPref('debug')) { return; }
-    if (!j3s.preferences.getBoolPref('watch_folders')) { return; }
+    if (!j3s.getBoolPref('debug')) { return; }
+    if (!j3s.getBoolPref('watch_folders')) { return; }
 
     // Hook on the onOK callback defined in chrome://messenger/content/virtualFolderProperties.js
     AOP.around({

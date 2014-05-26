@@ -43,6 +43,9 @@ var dom_proto = {
 
     append: function(child, parent)
     {
+        if (typeof child === 'string') {
+            return parent.appendChild(this.doc.createTextNode(child));
+        }
         return parent.appendChild(child);
     },
 
