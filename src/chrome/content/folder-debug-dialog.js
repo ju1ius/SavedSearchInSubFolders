@@ -24,7 +24,7 @@ var j3s = ju1ius.SavedSearchInSubFolders,
 window.addEventListener('load', function()
 {
     var folder = window.arguments[0].folder,
-        copy_btn = dom.qs('copy-info');
+        copy_btn = dom.qs('#copy-info');
     if (!folder) {
         j3s.log('No folder specified');
         return;
@@ -57,7 +57,6 @@ function populateFolderInfo(folder)
     add_row(listbox, 'Allows sub folder creation ?', folder.canCreateSubfolders);
     add_row(listbox, 'Allows renaming ?', folder.canRename);
     add_row(listbox, 'Allows compacting ?', folder.canCompact);
-    add_row(listbox, 'In Virtual folder search scope ?', folder.inVFEditSearchScope);
     if (folder instanceof Ci.nsIMsgImapMailFolder) {
         add_row(listbox, '[IMAP] Verified as online folder ?', folder.verifiedAsOnlineFolder);
         add_row(listbox, '[IMAP] Online name', folder.onlineName);
